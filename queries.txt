@@ -1,0 +1,39 @@
+
+Compass db URL : mongodb+srv://admin:admin123@loopacc.vzozr5w.mongodb.net/
+shell URL       : mongosh "mongodb+srv://loopacc.vzozr5w.mongodb.net/" --apiVersion 1 --username admin
+password        : admin123
+
+
+
+1. Find all the topics and tasks which are thought in the month of October
+
+    Task:
+    db.task.aggregate([{$addFields: {submittedDate:{$dateFromString:{dateString:"$submittedon",format:"%d-%m-%Y"}}}},{$match:{submittedDate:{$gte:ISODate("2020-10-01T00:00:00Z"),$lte:ISODate("2020-10-31T23:59:59Z")}}}])
+
+    Topics:
+    db.topics.aggregate([{$addFields:{submittedDate:{$dateFromString:{dateString:"$date",format:"%d-%m-%Y"}}}},{$match:{submittedDate:{$gte:ISODate("2020-10-01T00:00:00Z"),$lte:ISODate("2020-10-31T23:59:59Z")}}}])
+
+2. Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+    db.companydrive.aggregate([{$addFields:{driveon:{$dateFromString:{dateString:"$date",format:"%d-%m-%Y"}}}},{$match:{driveon:{$gte:ISODate("2020-10-15T00:00:00Z"),$lte: ISODate("2020-10-31T23:59:59Z")}}}])
+
+3. Find all the company drives and students who are appeared for the placement.
+
+    db.users.aggregate([{$lookup:{from:"companydrive",localField:"userid",foreignField:"userid",as:"placements"}}])
+
+4. Find the number of problems solved by the user in codekata
+
+    db.users.aggregate([{$lookup:{from:"codekata",localField:"userid",foreignField:"userid",as:"codekata"}},{$addFields:{totalTasks:{$size:"$codekata"}}}])
+
+5. Find all the mentors with who has the mentee's count more than 15
+
+    db.mentors.aggregate([{$lookup:{from:"topics",localField:"mentorid",foreignField:"mentorid",as:"Topics"}},{$addFields:{totalMentees:{$size:"$Topics"}}},{$match:{totalMentees:{$gte:15}}}])
+
+6. Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+
+    Abscent list between 15 oct-2020 and 31-oct-2020:    
+
+    db.users.aggregate([{$lookup:{from:"attandance",localField:"userid",foreignField:"userid",pipeline:[{$match:{present:false}},{$addFields:{formateddate:{$dateFromString:{dateString:"$date",format: "%d-%m-%Y"}}}},{$match:{formateddate:{$gte:ISODate("2020-10-15T00:00:00Z"),$lte:ISODate("2020-10-31T00:00:00Z")}}}],as:"attandance"}}])
+
+    Not submitted task list between 15 oct-2020 and 31-oct-2020:
+
+    db.users.aggregate([{$lookup:{from:"task",localField:"userid",foreignField:"userid",pipeline:[{$addFields:{formateddate:{$dateFromString:{dateString:"$submittedon",format:"%d-%m-%Y"}}}},{$match:{formateddate:{$gte:ISODate("2020-10-15T00:00:00Z"),$lte:ISODate("2020-10-31T00:00:00Z")}}}],as:"task"}}])
